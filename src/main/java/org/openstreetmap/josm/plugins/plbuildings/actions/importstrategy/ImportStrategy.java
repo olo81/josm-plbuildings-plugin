@@ -17,6 +17,7 @@ import org.openstreetmap.josm.plugins.plbuildings.gui.SurveyConfirmationDialog;
 import org.openstreetmap.josm.plugins.plbuildings.models.BuildingsImportStats;
 import org.openstreetmap.josm.plugins.plbuildings.utils.BuildingsOverlapDetector;
 import org.openstreetmap.josm.plugins.plbuildings.utils.NearestBuilding;
+import org.openstreetmap.josm.plugins.plbuildings.utils.TagConflictUtils;
 import org.openstreetmap.josm.tools.Logging;
 
 public abstract class ImportStrategy {
@@ -50,7 +51,9 @@ public abstract class ImportStrategy {
     public void trySimplifyBuildingValue() {
         String oldValue = manager.getSelectedBuilding().get("building");
         String newValue = importedBuilding.get("building");
-        if (isBuildingValueSimplification(oldValue, newValue)) {
+        // Don't silently keep an uncommon OSM value when the import brings a generic "yes" –
+        // let the mapper choose in the conflict dialog instead.
+        if (isBuildingValueSimplification(oldValue, newValue) && TagConflictUtils.isCommonBuildingValue(oldValue)) {
             importedBuilding.put("building", manager.getSelectedBuilding().get("building"));
             Logging.info("Avoiding building details simplification ({0} -\\> {1})", oldValue, newValue);
         }

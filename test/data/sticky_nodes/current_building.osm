@@ -1,0 +1,71 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<osm version='0.6' generator='JOSM'>
+  <bounds minlat='50.3385' minlon='19.4860' maxlat='50.3400' maxlon='19.4888' origin='CGImap 0.8.6 (test)' />
+  <node id='101951' action='modify' visible='true' lat='50.3395' lon='19.4870' version='1' />
+  <node id='101952' action='modify' visible='true' lat='50.3395' lon='19.4874' version='1'>
+    <tag k='entrance' v='main' />
+  </node>
+  <node id='101953' action='modify' visible='true' lat='50.3395' lon='19.4878' version='1' />
+  <node id='101954' action='modify' visible='true' lat='50.33925' lon='19.4878' version='1'>
+    <tag k='man_made' v='surveillance' />
+  </node>
+  <node id='101955' action='modify' visible='true' lat='50.3390' lon='19.4878' version='1' />
+  <node id='101956' action='modify' visible='true' lat='50.3390' lon='19.4874' version='1'>
+    <tag k='entrance' v='yes' />
+  </node>
+  <node id='101957' action='modify' visible='true' lat='50.3390' lon='19.4870' version='1' />
+  <node id='101958' action='modify' visible='true' lat='50.3395' lon='19.4885' version='1' />
+  <node id='101959' action='modify' visible='true' lat='50.3393' lon='19.4885' version='1' />
+  <node id='101960' action='modify' visible='true' lat='50.3390' lon='19.4863' version='1' />
+  <node id='101961' action='modify' visible='true' lat='50.3397' lon='19.4867' version='1' />
+  <node id='101962' action='modify' visible='true' lat='50.3399' lon='19.4867' version='1' />
+  <node id='101963' action='modify' visible='true' lat='50.33905' lon='19.48795' version='1' />
+  <node id='101964' action='modify' visible='true' lat='50.33975' lon='19.48795' version='1' />
+  <node id='101965' action='modify' visible='true' lat='50.3397' lon='19.4877' version='1' />
+  <node id='101966' action='modify' visible='true' lat='50.33945' lon='19.4877' version='1' />
+  <node id='101967' action='modify' visible='true' lat='50.33935' lon='19.48765' version='1' />
+  <way id='102475' action='modify' visible='true' version='1'>
+    <nd ref='101951' />
+    <nd ref='101952' />
+    <nd ref='101953' />
+    <nd ref='101954' />
+    <nd ref='101955' />
+    <nd ref='101956' />
+    <nd ref='101957' />
+    <nd ref='101951' />
+    <tag k='building' v='house' />
+  </way>
+  <way id='102476' action='modify' visible='true' version='1'>
+    <nd ref='101953' />
+    <nd ref='101958' />
+    <nd ref='101959' />
+    <tag k='barrier' v='fence' />
+  </way>
+  <way id='102477' action='modify' visible='true' version='1'>
+    <nd ref='101957' />
+    <nd ref='101960' />
+    <tag k='barrier' v='fence' />
+  </way>
+  <way id='102478' action='modify' visible='true' version='1'>
+    <nd ref='101951' />
+    <nd ref='101961' />
+    <nd ref='101962' />
+    <tag k='power' v='line' />
+  </way>
+  <way id='102479' action='modify' visible='true' version='1'>
+    <nd ref='101963' />
+    <nd ref='101964' />
+    <tag k='barrier' v='fence' />
+  </way>
+  <way id='102480' action='modify' visible='true' version='1'>
+    <nd ref='101965' />
+    <nd ref='101966' />
+    <tag k='barrier' v='fence' />
+  </way>
+  <way id='102481' action='modify' visible='true' version='1'>
+    <nd ref='101952' />
+    <nd ref='101967' />
+    <nd ref='101956' />
+    <tag k='barrier' v='fence' />
+  </way>
+</osm>

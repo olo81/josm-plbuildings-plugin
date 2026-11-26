@@ -19,15 +19,17 @@ import org.openstreetmap.josm.data.osm.DataSet;
 import org.openstreetmap.josm.data.osm.OsmPrimitive;
 import org.openstreetmap.josm.data.osm.TagCollection;
 import org.openstreetmap.josm.data.osm.Way;
-import org.openstreetmap.josm.gui.conflict.tags.CombinePrimitiveResolverDialog;
 import org.openstreetmap.josm.plugins.plbuildings.BuildingsSettings;
 import org.openstreetmap.josm.plugins.plbuildings.enums.ImportStatus;
+import org.openstreetmap.josm.plugins.plbuildings.gui.PlBuildingsConflictResolverDialog;
+import org.openstreetmap.josm.plugins.plbuildings.utils.BuildingsSessionStateManager;
 
 public class UpdateBuildingTagsCommandTest {
 
     @BeforeEach
     void setUp() {
         ExpertToggleAction.getInstance().setExpert(true);
+        BuildingsSessionStateManager.clearTagConflictSessionState();
     }
 
     @Test
@@ -219,13 +221,15 @@ public class UpdateBuildingTagsCommandTest {
         newDs.addPrimitiveRecursive(newBuilding);
 
         AtomicBoolean wasCalled = new AtomicBoolean(false);
-        new MockUp<CombinePrimitiveResolverDialog>() {
+        new MockUp<PlBuildingsConflictResolverDialog>() {
             @Mock
             public List<Command> launchIfNecessary(
                 Invocation inv,
                 TagCollection tags,
                 Collection<OsmPrimitive> primitives,
-                Collection<OsmPrimitive> reference
+                Collection<OsmPrimitive> reference,
+                Way selectedBuilding,
+                Way newBuilding
             ) {
                 // TagCollection need to have 2 values for building key – then it triggers conflict and appear for user
                 Assertions.assertEquals(Set.of("asdf", "detached"), tags.getValues("building"));

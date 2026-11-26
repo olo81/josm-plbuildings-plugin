@@ -9,6 +9,7 @@ import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.util.Collection;
+import java.util.List;
 import java.util.stream.Collectors;
 import javax.swing.SwingUtilities;
 import org.openstreetmap.josm.actions.JosmAction;
@@ -82,6 +83,17 @@ public class BuildingsImportAction extends JosmAction {
             .filter(osmPrimitive -> osmPrimitive.getType() == OsmPrimitiveType.WAY)
             .collect(Collectors.toList());
         return selected.size() == 1 ? (Way) selected.toArray()[0] : null;
+    }
+
+    /**
+     * @return – all selected ways in the given dataset (possibly empty)
+     */
+    public static List<Way> getSelectedWays(DataSet ds) {
+        return ds.getSelected()
+            .stream()
+            .filter(osmPrimitive -> osmPrimitive.getType() == OsmPrimitiveType.WAY)
+            .map(Way.class::cast)
+            .collect(Collectors.toList());
     }
 
     public static Bounds getUserFrameViewBounds() {
@@ -184,6 +196,14 @@ public class BuildingsImportAction extends JosmAction {
         } catch (ImportActionCanceledException exception) {
             Logging.info("{0} {1}", exception.getStatus(), exception.getMessage());
             manager.setStatus(exception.getStatus(), exception.getMessage());
+        } catch (RuntimeException exception) {
+            // Any unexpected error must be shown to the user – otherwise the click would silently
+            // do nothing (the geometry would simply not appear).
+            Logging.error("PlBuildings runtime error at building import: {0}", exception);
+            manager.setStatus(
+                ImportStatus.IMPORT_ERROR,
+                tr("Cannot import the building!") + " (" + exception.getMessage() + ")"
+            );
         } finally {
             manager.getEditLayer().clearSelection();
             importStats.save();
@@ -197,13 +217,15 @@ public class BuildingsImportAction extends JosmAction {
         // Get selection first – it must be got before starting downloading
         // to avoid changing incorrect building in future – which is possible if user importing so fast and
         // downloading takes longer then selecting next building to update
-        Way selectedBuilding = getSelectedWay(currentDataSet);
+        List<Way> selectedBuildings = getSelectedWays(currentDataSet).stream()
+            .filter(way -> way.hasKey("building"))
+            .collect(Collectors.toList());
         LatLon cursorLatLon = getCurrentCursorLocation();
 
-        BuildingsImportManager buildingsImportManager = new BuildingsImportManager(
+        BuildingsImportManager buildingsImportManager = BuildingsImportManager.createWithSelectedBuildings(
             currentDataSet,
             cursorLatLon,
-            selectedBuilding
+            selectedBuildings
         );
         try {
             buildingsImportManager.validate();

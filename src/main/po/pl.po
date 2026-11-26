@@ -65,6 +65,10 @@ msgstr "Czy na pewno chcesz usunąć serwer {0}?"
 msgid "Autoremove source"
 msgstr "Auto usuwanie źródła"
 
+#: src/main/java/org/openstreetmap/josm/plugins/plbuildings/actions/importstrategy/FullImportStrategy.java:331
+msgid "Attached the doors to the building"
+msgstr "Doczepiono drzwi do budynku"
+
 #: src/main/java/org/openstreetmap/josm/plugins/plbuildings/gui/SettingsAutoremoveSourceTagsPanel.java:21
 #, java-format
 msgid ""
@@ -88,6 +92,10 @@ msgstr "Statystyki importowania budynków"
 msgid "Building merging canceled!"
 msgstr "Anulowano scalanie budynków!"
 
+#: src/main/java/org/openstreetmap/josm/plugins/plbuildings/BuildingsDownloadTask.java:38
+msgid "Building import interrupted!"
+msgstr "Import budynku został przerwany!"
+
 #: src/main/java/org/openstreetmap/josm/plugins/plbuildings/actions/BuildingsImportAction.java:149
 msgid "Building not found."
 msgstr "Nie znaleziono budynku."
@@ -107,13 +115,25 @@ msgstr "Anuluj"
 msgid "Canceled"
 msgstr "Anulowano"
 
+#: src/main/java/org/openstreetmap/josm/plugins/plbuildings/actions/BuildingsImportAction.java:195
+msgid "Cannot import the building!"
+msgstr "Nie można zaimportować budynku!"
+
+#: src/main/java/org/openstreetmap/josm/plugins/plbuildings/actions/importstrategy/FullImportStrategy.java:173
+msgid "Cannot import: one of the selected parts is a member of a relation!"
+msgstr "Nie można zaimportować: jedna z zaznaczonych części należy do relacji!"
+
+#: src/main/java/org/openstreetmap/josm/plugins/plbuildings/BuildingsDownloadTask.java:44
+msgid "Cannot download or import the building!"
+msgstr "Nie można pobrać lub zaimportować budynku!"
+
 #: src/main/java/org/openstreetmap/josm/plugins/plbuildings/commands/ReplaceBuildingGeometryCommand.java:110
 msgid ""
 "Cannot merge buildings! A building was wrongly replaced, and the data is "
-"broken!"
+"broken! Download the area again to repair the data layer."
 msgstr ""
 "Nie można scalić budynków! Budynek został błędnie podmieniony i jego dane "
-"zostały popsute!"
+"zostały popsute! Pobierz obszar ponownie, aby naprawić warstwę danych."
 
 #: src/main/java/org/openstreetmap/josm/plugins/plbuildings/commands/ReplaceBuildingGeometryCommand.java:97
 msgid ""
@@ -165,7 +185,12 @@ msgstr "Źródło danych:"
 msgid "Data sources"
 msgstr "Źródła danych"
 
+#: src/main/java/org/openstreetmap/josm/plugins/plbuildings/actions/importstrategy/FullImportStrategy.java:412
+msgid "Delete old parts"
+msgstr "Usuń stare części"
+
 #: src/main/java/org/openstreetmap/josm/plugins/plbuildings/gui/ImportedBuildingOverlappingOptionDialog.java:50
+#: src/main/java/org/openstreetmap/josm/plugins/plbuildings/gui/TagConflictFrequentDialog.java:51
 msgid "Do not show again (this session)."
 msgstr "Nie pokazuj ponownie (w tej sesji)."
 
@@ -250,6 +275,10 @@ msgstr ""
 "zaznaczony."
 
 #: src/main/java/org/openstreetmap/josm/plugins/plbuildings/actions/importstrategy/FullImportStrategy.java:64
+msgid "Imported one building replacing selected parts"
+msgstr "Zaimportowano jeden budynek zastępujący zaznaczone części"
+
+#: src/main/java/org/openstreetmap/josm/plugins/plbuildings/actions/importstrategy/FullImportStrategy.java:74
 msgid "Imported a new building"
 msgstr "Zaimportowano nowy budynek"
 
@@ -532,6 +561,32 @@ msgstr "Importuj budynki z polskich publicznych zbiorów danych."
 #. Translator credits (translators who want to be credited for their contributions can add their names here as the translation)
 msgid "translator-credits"
 msgstr "NieWnen"
+
+#: src/main/java/org/openstreetmap/josm/plugins/plbuildings/gui/PlBuildingsConflictResolverDialog.java:77
+msgid "Remember"
+msgstr "Zapamiętaj"
+
+#: src/main/java/org/openstreetmap/josm/plugins/plbuildings/gui/PlBuildingsConflictResolverDialog.java:117
+msgid "Remember this choice until the end of the session"
+msgstr "Zapamiętaj ten wybór do końca sesji"
+
+#: src/main/java/org/openstreetmap/josm/plugins/plbuildings/gui/TagConflictFrequentDialog.java:61
+msgid "Repeated tag conflict"
+msgstr "Powtarzający się konflikt tagów"
+
+#: src/main/java/org/openstreetmap/josm/plugins/plbuildings/gui/TagConflictFrequentDialog.java:34
+#, java-format
+msgid ""
+"The same tag conflict for the \"{0}\" tag (\"{1}\" vs \"{2}\") has already occurred {3} times "
+"in this session.\n"
+"This may indicate a low-quality import in this area.\n"
+"Please consider notifying the Polish OpenStreetMap community on Discord so that the data "
+"can be checked and fixed in bulk:"
+msgstr ""
+"Ten sam konflikt tagu „{0}” („{1}” a „{2}”) wystąpił już {3} razy w tej sesji.\n"
+"Może to oznaczać import danych słabej jakości w tej okolicy.\n"
+"Rozważ powiadomienie polskiej społeczności OpenStreetMap na Discordzie, aby dane zostały "
+"sprawdzone i poprawione hurtowo:"
 
 #, java-printf-format
 #~ msgid "Use %s"

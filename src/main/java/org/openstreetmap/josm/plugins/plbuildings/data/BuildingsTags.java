@@ -59,6 +59,28 @@ public class BuildingsTags {
     );
 
     /**
+     * Keys which describe a service located in the building (a shop, an office, a pharmacy etc.).
+     * When several parts of one block are replaced by a single building, each such tag is extracted
+     * to a separate node instead of being lost with the deleted part.
+     */
+    public static final Set<String> SERVICE_TAGS = Set.of(
+        "amenity",
+        "club",
+        "craft",
+        "education",
+        "emergency",
+        "healthcare",
+        "historic",
+        "leisure",
+        "office",
+        "public_transport",
+        "shop",
+        "social_facility",
+        "sport",
+        "tourism"
+    );
+
+    /**
      * https://wiki.openstreetmap.org/wiki/Lifecycle_prefix
      */
     public static final Set<String> COMMON_LIFECYCLE_PREFIXES = Set.of(

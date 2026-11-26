@@ -17,9 +17,9 @@ import org.openstreetmap.josm.data.osm.OsmPrimitive;
 import org.openstreetmap.josm.data.osm.Tag;
 import org.openstreetmap.josm.data.osm.TagCollection;
 import org.openstreetmap.josm.data.osm.Way;
-import org.openstreetmap.josm.gui.conflict.tags.CombinePrimitiveResolverDialog;
 import org.openstreetmap.josm.plugins.plbuildings.BuildingsSettings;
 import org.openstreetmap.josm.plugins.plbuildings.enums.ImportStatus;
+import org.openstreetmap.josm.plugins.plbuildings.gui.PlBuildingsConflictResolverDialog;
 import org.openstreetmap.josm.tools.Logging;
 import org.openstreetmap.josm.tools.UserCancelException;
 
@@ -176,8 +176,8 @@ public class UpdateBuildingTagsCommand extends Command implements CommandResultB
 
 
     /**
-     * Prepare update tags command using CombinePrimitiveResolverDialog before launching dialog.
-     * It checks if any conflict can be skipped using resolveTagConflictsDefault from TagConflictsUtil
+     * Prepare update tags command using the JOSM conflict resolution dialog (with the "remember my choices"
+     * option). It checks if any conflict can be skipped using resolveTagConflictsDefault from TagConflictsUtil.
      *
      * @return list of commands as updating tags
      * @throws UserCancelException if user close the window or reject possible tags conflict
@@ -196,10 +196,12 @@ public class UpdateBuildingTagsCommand extends Command implements CommandResultB
         handleConstructionSubtag(tagsOfPrimitives, selectedBuilding, newBuilding);
         resolveTagConflictsDefault(tagsOfPrimitives, selectedBuilding, newBuilding);
 
-        return CombinePrimitiveResolverDialog.launchIfNecessary(
+        return PlBuildingsConflictResolverDialog.launchIfNecessary(
             tagsOfPrimitives,
             primitives,
-            Collections.singleton(selectedBuilding)
+            Collections.singleton(selectedBuilding),
+            selectedBuilding,
+            newBuilding
         );
     }
 

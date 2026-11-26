@@ -4,9 +4,18 @@ import java.util.Set;
 import org.openstreetmap.josm.data.osm.OsmPrimitive;
 import org.openstreetmap.josm.data.osm.Tag;
 import org.openstreetmap.josm.data.osm.TagCollection;
+import org.openstreetmap.josm.plugins.plbuildings.BuildingsSettings;
 import org.openstreetmap.josm.plugins.plbuildings.data.BuildingsTags;
 
 public class TagConflictUtils {
+
+    /**
+     * @param value building tag value to check
+     * @return true if the value is on the list of common building values (doesn't need the mapper's attention)
+     */
+    public static boolean isCommonBuildingValue(String value) {
+        return value != null && BuildingsSettings.COMMON_BUILDING_TAGS.get().contains(value);
+    }
 
     /**
      * Try to remove some conflicts which can be avoided using function isTagConflictCanBeSkipped
@@ -51,7 +60,8 @@ public class TagConflictUtils {
     static boolean isTagConflictCanBeSkipped(String key, String currentValue, String newValue) {
         switch (key) {
             case "building":
-                if (currentValue.equals("yes") && !newValue.equals("construction")) {
+                if (currentValue.equals("yes") && !newValue.equals("construction")
+                    && isCommonBuildingValue(newValue)) {
                     return true;
                 }
                 else if (currentValue.equals("construction")) {

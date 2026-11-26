@@ -50,6 +50,16 @@ public class SharedNodesUtils {
         return SharedNodesUtils.isNodeStickToWayWithTag(node, new AbstractMap.SimpleEntry<>("building", "*"));
     }
 
+    /**
+     * Checks if the node is part of a landuse area way. Such nodes must not be moved or merged
+     * during import – the landuse area has to stay untouched.
+     *
+     * @return true if at least one of the node's parent ways has the landuse key
+     */
+    public static boolean isNodeReferencedByLanduse(Node node) {
+        return isNodeStickToWayWithTag(node, new AbstractMap.SimpleEntry<>("landuse", "*"));
+    }
+
 
     /**
      * @param node which is element of ways to check theirs tags

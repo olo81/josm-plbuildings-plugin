@@ -72,6 +72,13 @@ public class TagConflictUtilsTest {
         );
     }
 
+    @Test
+    void testConflictWithChangeYesForUncommonBuildingValue() {
+        Assertions.assertTrue(isConflict(
+            List.of(new Tag("building", "yes")), List.of(new Tag("building", "manufacture")))
+        );
+    }
+
     @ParameterizedTest
     @CsvSource({"house", "apartments", "detached", "semidetached_house", "terrace"})
     void testNoConflictWithChangeResidentialForAnyLivingBuilding(String newValue) {

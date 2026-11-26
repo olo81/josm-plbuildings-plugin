@@ -40,12 +40,30 @@ Wtyczka komunikuje się z [serwerem PLBuildings](https://github.com/praszuk/josm
     - Ostatnie tagi (wraz ze wskaźnikiem nietypowych tagów)
 - Automatyczne dodawanie tagów `source:building` i `source:geometry`.
 - Automatyczne usuwanie wybranych wartości z klucza `source` (np. `geoportal.gov.pl`).
+- Okno konfliktów tagów z opcją „Zapamiętaj” – konflikt każdej pary tagów (np. `building=manufacture` vs `building=outbuilding`, różne wartości `building:levels`) można rozstrzygnąć raz, a wybór (wartość z OSM lub z importu) jest zapamiętywany dla tej konkretnej pary tagów do zamknięcia JOSMa.
+- Ostrzeżenie o częstych konfliktach – gdy zapamiętana para tagów wejdzie w konflikt po raz 10., wtyczka pokazuje jednorazowe ostrzeżenie o możliwym imporcie złej jakości z linkiem do Discorda społeczności OSM Polska (https://discord.gg/96y4wSxG5).
+- Import wielu zaznaczonych części budynku jako jednego budynku – adresy części są wyciągane jako osobne węzły adresowe, a usługi (np. `shop=*`, `amenity=*`) jako osobne punkty; cała operacja jest jednym krokiem cofania.
+- Zachowanie obiektów „przyklejonych” do budynku – drzwi (`entrance=*`), ogrodzenia (`barrier=*`), kamery i linie energetyczne przyczepione do obrysu są przenoszone na najbliższe punkty nowego obrysu.
+- Przycinanie ogrodzeń przecinających nowy obrys budynku, łączenie zdublowanych węzłów i usuwanie ogrodzeń leżących na ścianach budynku.
+- Ochrona obszarów `landuse` – obszary przyklejone do budynku nie są ruszane ani łączone przy imporcie.
+- Bezpieczne wycofywanie zmian – w razie błędu importu geometria budynku jest przywracana, a w warstwie nie zostają referencje do usuniętych węzłów.
+
+## Konflikty tagów z opcją zapamiętania
+Przy zastępowaniu budynku danymi z importu, jeśli tagi różnią się od tych w OSM (np. OSM: `building=manufacture`, import: `building=outbuilding`; inne wartości `building:levels`; nietypowe tagi przy `building=yes` z importu), pojawia się jedno okno z listą wszystkich konfliktów. Przy każdym konflikcie jest pole „Zapamiętaj” – zaznaczenie go zapamiętuje wybraną wartość (z OSM lub z importu) dla tej konkretnej pary tagów do zamknięcia JOSMa. Kolejne konflikty tej samej pary są wtedy rozstrzygane automatycznie, bez okna.
+
+Gdy zapamiętana para wejdzie w konflikt po raz 10. i wybrana wartość ulegnie zmianie, wtyczka pokazuje jednorazowy komunikat, że konflikt występuje wiele razy i że w okolicy mógł zostać wykonany import złej jakości – z klikalnym linkiem do Discorda społeczności OSM Polska: https://discord.gg/96y4wSxG5.
+
+## Import wielu zaznaczonych części budynku
+Zaznaczenie kilku części jednego bloku (np. trzech segmentów z osobnymi adresami) i uruchomienie importu zastępuje je jednym budynkiem z importu. Adresy (`addr:*`) części są wyciągane jako osobne węzły adresowe umieszczone w środkach części. Usługi części (np. `shop=*`, `amenity=*`, `office=*`) są wyciągane do osobnych punktów – po jednym punkcie na usługę; pojedyncza usługa dzieli węzeł z adresem części (sklep z adresem to jeden punkt), a przy kilku usługach każda dostaje własny węzeł. Drzwi i inne obiekty przyklejone do części zostają przeniesione na nowy obrys. Cała operacja jest jednym krokiem cofania (Ctrl+Z). Import zostanie przerwany, jeśli któraś z części należy do relacji.
+
+## Obiekty przyklejone do budynku i ogrodzenia
+Przy zamianie geometrii obiekty przyczepione do obrysu w punktach – drzwi (`entrance=*`), ogrodzenia (`barrier=*`), kamery, linie energetyczne itp. – zostają przeniesione na najbliższe punkty nowego obrysu i pozostają do niego przyczepione. Ogrodzenia przecinające nowy obrys są przycinane w punktach przecięcia (z ponownym użyciem istniejących węzłów), węzły leżące w tym samym miejscu są łączone, a ogrodzenia leżące wzdłuż ścian budynku są usuwane. Obszary `landuse` przyklejone do budynku pozostają nienaruszone.
 
 ## Jak z niej korzystać
 1. Zainstaluj wtyczkę w JOSMie (tak jak każdą inną – przez ustawienia JOSMa).
 2. Otwórz boczny panel (Toggle Dialog): Po lewej stronie powinna być widoczna ikonka z budynkami (logiem tej wtyczki) – klknij na nią. Po prawej stronie powinien otworzyć się boczny panel wtyczki taki jak na GIFie poniżej.
 3. Wybierz tryb importu i źródło danych – zostanie to zapamiętane, ale rekomenduję zawsze mieć otwarty boczny panel dla łatwiejszej zmiany trybu/źródła i aby mieć na uwadze ostatni import.
-4. Nakieruj kursor myszy na widoczny budynek i naciśnij `CTRL + SHIFT + 1` – spowoduje to import budynku. Jeśli przed wciśnięciem skrótu został zaznaczony inny budynek, zostanie użyta funkcja zamiany geometrii z pluginu [utilsplugin2](https://wiki.openstreetmap.org/wiki/JOSM/Plugins/utilsplugin2) w celu aktualizacji starego kształtu. Może to wyświetlić okno dialogowe konfliktów tagów. 
+4. Nakieruj kursor myszy na widoczny budynek i naciśnij `CTRL + SHIFT + 1` – spowoduje to import budynku. Jeśli przed wciśnięciem skrótu został zaznaczony inny budynek, zostanie użyta funkcja zamiany geometrii z pluginu [utilsplugin2](https://wiki.openstreetmap.org/wiki/JOSM/Plugins/utilsplugin2) w celu aktualizacji starego kształtu. Przy różnicach w tagach wtyczka wyświetli własne okno konfliktów z możliwością zapamiętania wyboru (patrz wyżej).
 
 Notka: Jeśli skrót nie działa (może się tak zdarzyć) lub po prostu chcesz go zmienić na inny, wejdź w ustawienia skrótów w JOSMie i wpisz: `plbuildings`, następnie zmień skrót dla `Pobierz budynek`.
 

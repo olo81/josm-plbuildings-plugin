@@ -11,6 +11,8 @@ import static org.openstreetmap.josm.plugins.plbuildings.utils.NearestBuilding.g
 import static org.openstreetmap.josm.plugins.plbuildings.utils.PreCheckUtils.validateSelectedWay;
 import static org.openstreetmap.josm.tools.I18n.tr;
 
+import java.util.ArrayList;
+import java.util.List;
 import org.openstreetmap.josm.data.coor.LatLon;
 import org.openstreetmap.josm.data.osm.DataSet;
 import org.openstreetmap.josm.data.osm.OsmPrimitive;
@@ -38,6 +40,7 @@ import org.openstreetmap.josm.plugins.plbuildings.utils.NearestBuilding;
 public class BuildingsImportManager {
     private final LatLon cursorLatLon;
     private final Way selectedBuilding;
+    private List<Way> selectedBuildings;
     private final DataSet editLayer;
     private final DataSourceConfig dataSourceConfig;
     private DataSourceProfile currentProfile;
@@ -50,6 +53,10 @@ public class BuildingsImportManager {
     public BuildingsImportManager(DataSet editLayer, LatLon cursorLatLon, Way selectedBuilding) {
         this.editLayer = editLayer;
         this.cursorLatLon = cursorLatLon;
+        this.selectedBuildings = new ArrayList<>();
+        if (selectedBuilding != null) {
+            this.selectedBuildings.add(selectedBuilding);
+        }
         this.selectedBuilding = selectedBuilding;
         this.dataSourceConfig = new DataSourceConfig();
         this.currentProfile = dataSourceConfig.getCurrentProfile();
@@ -68,8 +75,30 @@ public class BuildingsImportManager {
         return cursorLatLon;
     }
 
+    /**
+     * Creates a manager for an import replacing several selected building parts with one building.
+     */
+    public static BuildingsImportManager createWithSelectedBuildings(
+        DataSet editLayer, LatLon cursorLatLon, List<Way> selectedBuildings
+    ) {
+        BuildingsImportManager manager = new BuildingsImportManager(
+            editLayer, cursorLatLon, selectedBuildings.isEmpty() ? null : selectedBuildings.get(0)
+        );
+        manager.setSelectedBuildings(selectedBuildings);
+        return manager;
+    }
+
+    private void setSelectedBuildings(List<Way> selectedBuildings) {
+        this.selectedBuildings.clear();
+        this.selectedBuildings.addAll(selectedBuildings);
+    }
+
     public Way getSelectedBuilding() {
         return selectedBuilding;
+    }
+
+    public List<Way> getSelectedBuildings() {
+        return selectedBuildings;
     }
 
     public DataSet getEditLayer() {
@@ -116,7 +145,9 @@ public class BuildingsImportManager {
                 tr("No data source profile selected!"), ImportStatus.IMPORT_ERROR
             );
         }
-        validateSelectedWay(selectedBuilding);
+        for (Way selectedWay : selectedBuildings) {
+            validateSelectedWay(selectedWay);
+        }
     }
 
     public void run() {

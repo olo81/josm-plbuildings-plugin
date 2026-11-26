@@ -1,0 +1,16 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<osm version='0.6' generator='JOSM'>
+  <bounds minlat='50.3385' minlon='19.4860' maxlat='50.3400' maxlon='19.4888' origin='CGImap 0.8.6 (test)' />
+  <node id='-101869' action='modify' visible='true' lat='50.3396' lon='19.4875' />
+  <node id='-101870' action='modify' visible='true' lat='50.3396' lon='19.4880' />
+  <node id='-101871' action='modify' visible='true' lat='50.3392' lon='19.4880' />
+  <node id='-101872' action='modify' visible='true' lat='50.3392' lon='19.4875' />
+  <way id='-102374' action='modify' visible='true'>
+    <nd ref='-101869' />
+    <nd ref='-101870' />
+    <nd ref='-101871' />
+    <nd ref='-101872' />
+    <nd ref='-101869' />
+    <tag k='building' v='yes' />
+  </way>
+</osm>
