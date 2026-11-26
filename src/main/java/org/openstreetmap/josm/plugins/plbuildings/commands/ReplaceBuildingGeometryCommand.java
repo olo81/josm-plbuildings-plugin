@@ -94,8 +94,7 @@ public class ReplaceBuildingGeometryCommand extends Command implements CommandRe
 
     @Override
     public void undoCommand() {
-        undoExecutedGeometryCommands();
-        restoreOriginalGeometry();
+        rollbackGeometry();
     }
 
     @Override
@@ -195,9 +194,50 @@ public class ReplaceBuildingGeometryCommand extends Command implements CommandRe
             // Roll back everything and restore the original geometry to keep the dataset consistent.
             // The utilsplugin2 ReplaceGeometryCommand is a SequenceCommand whose undoCommand() is a
             // no-op when its execution failed halfway, so the snapshot restore is mandatory.
-            undoExecutedGeometryCommands();
-            restoreOriginalGeometry();
+            rollbackGeometry();
             throw exception;
+        }
+    }
+
+    /**
+     * Best-effort rollback of the geometry replacement. The individual command undos are run in
+     * reverse order; when one of them fails (e.g. a command deleted a node which a later command's
+     * undo needs alive), the dataset could be left with ways referencing deleted nodes. Such nodes
+     * are restored before the original geometry is put back, so the rollback always ends with a
+     * consistent dataset.
+     */
+    private void rollbackGeometry() {
+        undoExecutedGeometryCommands();
+        replaceReferencedDeletedNodes(getAffectedDataSet());
+        restoreOriginalGeometry();
+    }
+
+    /**
+     * Un-deletes the nodes which are still referenced by non-deleted ways. When the rollback of the
+     * geometry commands is interrupted (e.g. by the tag conflict dialog being canceled), some ways
+     * may reference nodes whose deletion was not undone – restoring them keeps the dataset consistent
+     * and matches the original state before the import.
+     *
+     * @param dataSet dataset to heal (may be null)
+     */
+    public static void replaceReferencedDeletedNodes(DataSet dataSet) {
+        if (dataSet == null) {
+            return;
+        }
+        for (Way way : dataSet.getWays()) {
+            if (way.isDeleted()) {
+                continue;
+            }
+            for (Node node : way.getNodes()) {
+                if (node.isDeleted()) {
+                    Logging.warn(
+                        "Rollback: restoring deleted node {0} still referenced by way {1}",
+                        node.getId(),
+                        way.getId()
+                    );
+                    node.setDeleted(false);
+                }
+            }
         }
     }
 
