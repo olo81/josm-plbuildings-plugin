@@ -124,14 +124,14 @@ public class ReplaceBuildingGeometryCommand extends Command implements CommandRe
         // If selected building cannot be merged (e.g. connected ways/relation)
         else if (exception instanceof ReplaceGeometryException) {
             executeErrorReason = tr(
-                "Cannot merge buildings!"
-                    + " The old building might be part of ways or relations,"
+                "Cannot merge buildings! The old building might be part of ways or relations,"
                     + " or it is not entirely within the downloaded area."
-            );
+            ) + " (" + exception.getMessage() + ")";
             executeErrorStatus = ImportStatus.IMPORT_ERROR;
-            Logging.debug(
-                "No building update (id: {0}), caused: Replacing Geometry from UtilPlugins2 error",
-                selectedBuilding.getId()
+            Logging.info(
+                "No building update (id: {0}), caused: Replacing Geometry from UtilPlugins2 error: {1}",
+                selectedBuilding.getId(),
+                exception.getMessage()
             );
         }
         // If data integrity like nodes duplicated or first!=last has been somehow broken
@@ -170,7 +170,8 @@ public class ReplaceBuildingGeometryCommand extends Command implements CommandRe
         originalBuildingNodes = new ArrayList<>(selectedBuilding.getNodes());
         try {
             List<Node> stickyNodes = getStickyNodes(selectedBuilding, newBuilding);
-            if (stickyNodes.isEmpty()) {
+            List<Node> protectedNodes = getProtectedNodes(selectedBuilding, newBuilding);
+            if (stickyNodes.isEmpty() && protectedNodes.isEmpty()) {
                 ReplaceGeometryCommand replaceGeometryCmd = buildReplaceCommandWithAlignedTags(
                     selectedBuilding, newBuilding
                 );
@@ -179,7 +180,7 @@ public class ReplaceBuildingGeometryCommand extends Command implements CommandRe
                     throw new ReplaceGeometryException(tr("Cannot merge buildings!"));
                 }
             } else {
-                replaceGeometryKeepingStickyNodes(selectedBuilding, newBuilding, stickyNodes);
+                replaceGeometryKeepingStickyNodes(selectedBuilding, newBuilding, stickyNodes, protectedNodes);
             }
             BarrierWaysSnapper.snapBarrierWaysOntoOutline(
                 getAffectedDataSet(), selectedBuilding, geometryCommands, snapPrimitives
@@ -297,6 +298,33 @@ public class ReplaceBuildingGeometryCommand extends Command implements CommandRe
         return new ArrayList<>(stickyNodes);
     }
 
+    /**
+     * Nodes with their own tags or relation memberships which are shared with another building or a
+     * landuse area. Such nodes cannot be moved (that would break the neighbour or the landuse area),
+     * but utilsplugin2 refuses to replace the geometry while they are part of the old way. They are
+     * temporarily removed from the old building for the replacement and stay in place in the other ways.
+     */
+    private static List<Node> getProtectedNodes(Way selectedBuilding, Way newBuilding) {
+        Set<Node> protectedNodes = new LinkedHashSet<>();
+        for (Node node : selectedBuilding.getNodes()) {
+            if (newBuilding.containsNode(node)) {
+                continue;
+            }
+            boolean isSharedWithOtherBuilding = isNodeSharedWithOtherBuilding(node, selectedBuilding);
+            boolean isSharedWithLanduse = SharedNodesUtils.isNodeReferencedByLanduse(node);
+            if (!isSharedWithOtherBuilding && !isSharedWithLanduse) {
+                continue;
+            }
+            boolean hasInterestingKey = node.getKeys().keySet().stream()
+                .anyMatch(key -> !AbstractPrimitive.isUninterestingKey(key));
+            boolean isInRelation = node.getReferrers().stream().anyMatch(Relation.class::isInstance);
+            if (hasInterestingKey || isInRelation) {
+                protectedNodes.add(node);
+            }
+        }
+        return new ArrayList<>(protectedNodes);
+    }
+
     private static Stream<Way> getOtherReferrerWays(Node node, Way selectedBuilding) {
         return node.getReferrers().stream()
             .filter(Way.class::isInstance)
@@ -315,25 +343,33 @@ public class ReplaceBuildingGeometryCommand extends Command implements CommandRe
     private void replaceGeometryKeepingStickyNodes(
         Way selectedBuilding,
         Way newBuilding,
-        List<Node> stickyNodes
+        List<Node> stickyNodes,
+        List<Node> protectedNodes
     ) throws ReplaceGeometryException, IllegalArgumentException {
         Map<Node, LatLon> projections = projectNodesOntoWay(stickyNodes, newBuilding);
-        executeGeometryReplace(selectedBuilding, newBuilding, stickyNodes);
+        executeGeometryReplace(selectedBuilding, newBuilding, stickyNodes, protectedNodes);
         moveStickyNodesOntoOutline(stickyNodes, projections);
 
         // Attach the doors back to the outline (next to their new positions).
-        ChangeNodesCommand insertStickyNodesCommand = new ChangeNodesCommand(
-            selectedBuilding, insertStickyNodes(selectedBuilding, stickyNodes)
-        );
-        geometryCommands.add(insertStickyNodesCommand);
-        insertStickyNodesCommand.executeCommand();
+        if (!stickyNodes.isEmpty()) {
+            ChangeNodesCommand insertStickyNodesCommand = new ChangeNodesCommand(
+                selectedBuilding, insertStickyNodes(selectedBuilding, stickyNodes)
+            );
+            geometryCommands.add(insertStickyNodesCommand);
+            insertStickyNodesCommand.executeCommand();
+        }
     }
 
-    private void executeGeometryReplace(Way selectedBuilding, Way newBuilding, List<Node> stickyNodes)
-        throws ReplaceGeometryException, IllegalArgumentException {
-        // Temporarily remove sticky nodes so the geometry can be replaced by utilsplugin2.
+    private void executeGeometryReplace(
+        Way selectedBuilding,
+        Way newBuilding,
+        List<Node> stickyNodes,
+        List<Node> protectedNodes
+    ) throws ReplaceGeometryException, IllegalArgumentException {
+        // Temporarily remove sticky and protected nodes so the geometry can be replaced by utilsplugin2.
         List<Node> nodesWithoutSticky = new ArrayList<>(selectedBuilding.getNodes());
         nodesWithoutSticky.removeAll(stickyNodes);
+        nodesWithoutSticky.removeAll(protectedNodes);
         ChangeNodesCommand removeStickyNodesCommand = new ChangeNodesCommand(selectedBuilding, nodesWithoutSticky);
         removeStickyNodesCommand.executeCommand();
         geometryCommands.add(removeStickyNodesCommand);
