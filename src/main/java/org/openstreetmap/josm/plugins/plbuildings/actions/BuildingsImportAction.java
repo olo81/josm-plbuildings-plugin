@@ -32,6 +32,7 @@ import org.openstreetmap.josm.plugins.plbuildings.actions.importstrategy.TagsUpd
 import org.openstreetmap.josm.plugins.plbuildings.enums.ImportStatus;
 import org.openstreetmap.josm.plugins.plbuildings.exceptions.ImportActionCanceledException;
 import org.openstreetmap.josm.plugins.plbuildings.gui.LifecyclePrefixBuildingTagDialog;
+import org.openstreetmap.josm.plugins.plbuildings.gui.PlBuildingsConflictResolverDialog;
 import org.openstreetmap.josm.plugins.plbuildings.gui.UncommonTagDialog;
 import org.openstreetmap.josm.plugins.plbuildings.models.BuildingsImportData;
 import org.openstreetmap.josm.plugins.plbuildings.models.BuildingsImportStats;
@@ -212,6 +213,12 @@ public class BuildingsImportAction extends JosmAction {
 
     @Override
     public void actionPerformed(ActionEvent actionEvent) {
+        if (PlBuildingsConflictResolverDialog.isConflictDialogOpen()) {
+            // Never start a second import while the user is resolving a tag conflict – it would
+            // stack a second conflict dialog on top of the first one.
+            Logging.info("PlBuildings import skipped: a tag conflict dialog is already open.");
+            return;
+        }
         DataSet currentDataSet = getLayerManager().getEditDataSet();
 
         // Get selection first – it must be got before starting downloading

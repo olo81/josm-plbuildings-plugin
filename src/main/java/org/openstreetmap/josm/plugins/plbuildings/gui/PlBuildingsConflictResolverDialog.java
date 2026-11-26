@@ -3,6 +3,7 @@ package org.openstreetmap.josm.plugins.plbuildings.gui;
 import static org.openstreetmap.josm.tools.I18n.tr;
 
 import java.awt.BorderLayout;
+import java.awt.Dialog;
 import java.awt.GraphicsEnvironment;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
@@ -48,6 +49,14 @@ import org.openstreetmap.josm.tools.UserCancelException;
  */
 public class PlBuildingsConflictResolverDialog extends CombinePrimitiveResolverDialog {
     private static final int FREQUENT_TAG_CONFLICT_THRESHOLD = 10;
+
+    /**
+     * Guards against showing two conflict dialogs at the same time. When the user triggers another
+     * import while the dialog is open, the nested AWT event pump would otherwise show a second
+     * dialog on top of the first one.
+     */
+    private static final AtomicBoolean DIALOG_OPEN = new AtomicBoolean(false);
+
     private final Way selectedBuilding;
     private final Way newBuilding;
     private Map<String, Boolean> rememberStates;
@@ -164,6 +173,13 @@ public class PlBuildingsConflictResolverDialog extends CombinePrimitiveResolverD
     }
 
     /**
+     * @return true when a conflict resolution dialog is currently open
+     */
+    public static boolean isConflictDialogOpen() {
+        return DIALOG_OPEN.get();
+    }
+
+    /**
      * Works like {@link CombinePrimitiveResolverDialog#launchIfNecessary(TagCollection, Collection, Collection)},
      * but conflicts with a remembered resolution are resolved automatically (without showing the dialog)
      * and the dialog itself has a checkbox next to each conflicting tag pair.
@@ -218,27 +234,40 @@ public class PlBuildingsConflictResolverDialog extends CombinePrimitiveResolverD
         if (GraphicsEnvironment.isHeadless()) {
             return commands;
         }
-
-        UserCancelException canceled = GuiHelper.runInEDTAndWaitAndReturn(() -> {
-            PlBuildingsConflictResolverDialog dialog = new PlBuildingsConflictResolverDialog(
-                tagModel,
-                relModel,
-                selectedBuilding,
-                newBuilding
-            );
-            dialog.prepareGUIBeforeConflictResolutionStarts();
-            dialog.setVisible(true);
-            if (dialog.isApplied()) {
-                dialog.rememberChosenValues();
-                buildResolutionCommands(tagModel, relModel, targetPrimitives, commands);
-                return null;
-            }
-            return new UserCancelException(tr("Conflict resolution canceled"));
-        });
-        if (canceled != null) {
-            throw canceled;
+        if (!DIALOG_OPEN.compareAndSet(false, true)) {
+            // A conflict dialog is already open – never stack a second dialog on top of it.
+            Logging.warn("PlBuildings conflict dialog skipped: another conflict dialog is already open.");
+            throw new UserCancelException(tr("Conflict resolution canceled"));
         }
-        return commands;
+        try {
+            UserCancelException canceled = GuiHelper.runInEDTAndWaitAndReturn(() -> {
+                PlBuildingsConflictResolverDialog dialog = new PlBuildingsConflictResolverDialog(
+                    tagModel,
+                    relModel,
+                    selectedBuilding,
+                    newBuilding
+                );
+                dialog.setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
+                dialog.prepareGUIBeforeConflictResolutionStarts();
+                dialog.setVisible(true);
+                try {
+                    if (dialog.isApplied()) {
+                        dialog.rememberChosenValues();
+                        buildResolutionCommands(tagModel, relModel, targetPrimitives, commands);
+                        return null;
+                    }
+                    return new UserCancelException(tr("Conflict resolution canceled"));
+                } finally {
+                    dialog.dispose();
+                }
+            });
+            if (canceled != null) {
+                throw canceled;
+            }
+            return commands;
+        } finally {
+            DIALOG_OPEN.set(false);
+        }
     }
 
     private static List<Command> buildResolutionCommands(
