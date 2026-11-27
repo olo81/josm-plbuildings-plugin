@@ -12,6 +12,7 @@ import java.awt.event.ItemListener;
 import java.awt.event.KeyEvent;
 import java.util.function.Function;
 import javax.swing.BorderFactory;
+import javax.swing.BoxLayout;
 import javax.swing.ComboBoxModel;
 import javax.swing.DefaultListCellRenderer;
 import javax.swing.JButton;
@@ -97,7 +98,8 @@ public class BuildingsToggleDialog extends ToggleDialog {
     }
 
     private JPanel createConfigPanel() {
-        final JPanel configPanel = new JPanel(new GridLayout(0, 1));
+        final JPanel configPanel = new JPanel();
+        configPanel.setLayout(new BoxLayout(configPanel, BoxLayout.Y_AXIS));
 
         configPanel.add(createRow(new JLabel(tr("Status:")), status));
         configPanel.add(createRow(new JLabel(tr("Reason:")), statusReasonButton));
@@ -121,16 +123,12 @@ public class BuildingsToggleDialog extends ToggleDialog {
     }
 
     private JPanel createLatestTagsPanel() {
-        final JPanel lastImportTagsPanel = new JPanel(new GridLayout(0, 2));
+        final JPanel lastImportTagsPanel = new JPanel();
+        lastImportTagsPanel.setLayout(new BoxLayout(lastImportTagsPanel, BoxLayout.Y_AXIS));
 
-        lastImportTagsPanel.add(new JLabel("building:"));
-        lastImportTagsPanel.add(buildingType);
-
-        lastImportTagsPanel.add(new JLabel("building:levels:"));
-        lastImportTagsPanel.add(buildingLevels);
-
-        lastImportTagsPanel.add(new JLabel(tr("Uncommon tags:")));
-        lastImportTagsPanel.add(hasUncommonTag);
+        lastImportTagsPanel.add(createRow(new JLabel("building:"), buildingType));
+        lastImportTagsPanel.add(createRow(new JLabel("building:levels:"), buildingLevels));
+        lastImportTagsPanel.add(createRow(new JLabel(tr("Uncommon tags:")), hasUncommonTag));
 
         lastImportTagsPanel.setBorder(BorderFactory.createTitledBorder(tr("Latest tags")));
 
