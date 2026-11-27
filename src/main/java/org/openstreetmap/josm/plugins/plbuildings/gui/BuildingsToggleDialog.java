@@ -6,17 +6,20 @@ import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.GridLayout;
+import java.awt.Insets;
 import java.awt.event.ItemListener;
 import java.awt.event.KeyEvent;
 import java.util.function.Function;
 import javax.swing.BorderFactory;
 import javax.swing.ComboBoxModel;
 import javax.swing.DefaultListCellRenderer;
+import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.JPanel;
+import javax.swing.JTextArea;
 import javax.swing.border.EmptyBorder;
 import org.openstreetmap.josm.gui.dialogs.ToggleDialog;
 import org.openstreetmap.josm.plugins.plbuildings.BuildingsPlugin;
@@ -30,7 +33,8 @@ public class BuildingsToggleDialog extends ToggleDialog {
     private static final int DATA_SOURCE_PROFILE_MAX_CHARS = 20;
 
     private final JLabel status;
-    private final JLabel statusReason;
+    private final JButton statusReasonButton;
+    private final JTextArea statusReasonMessage;
 
     private final JComboBox<Object> importModeComboBox;
     private final JComboBox<Object> dataSourceProfilesComboBox;
@@ -56,7 +60,8 @@ public class BuildingsToggleDialog extends ToggleDialog {
         );
 
         this.status = new JLabel("");
-        this.statusReason = new JLabel("");
+        this.statusReasonButton = new JButton("ℹ");
+        this.statusReasonMessage = new JTextArea();
         this.importModeComboBox = new JComboBox<>();
         this.dataSourceProfilesComboBox = new JComboBox<>();
 
@@ -65,13 +70,36 @@ public class BuildingsToggleDialog extends ToggleDialog {
         this.hasUncommonTag = new JLabel("");
         this.dontAttachBarriersCheckBox = new JCheckBox(tr("Do not attach fences"));
 
+        this.statusReasonButton.setMargin(new Insets(0, 4, 0, 4));
+        this.statusReasonButton.setToolTipText(tr("Click to show the reason of the last conflict"));
+        this.statusReasonButton.addActionListener(event -> toggleStatusReasonMessage());
+
+        this.dontAttachBarriersCheckBox.setToolTipText(
+            tr("Fences are not snapped onto the building outline, cut or deleted during import")
+        );
+        this.dontAttachBarriersCheckBox.setSelected(BuildingsSettings.DONT_ATTACH_BARRIER_WAYS.get());
+        this.dontAttachBarriersCheckBox.addItemListener(event ->
+            BuildingsSettings.DONT_ATTACH_BARRIER_WAYS.put(dontAttachBarriersCheckBox.isSelected()));
+
+        this.statusReasonMessage.setEditable(false);
+        this.statusReasonMessage.setLineWrap(true);
+        this.statusReasonMessage.setWrapStyleWord(true);
+        this.statusReasonMessage.setColumns(30);
+        this.statusReasonMessage.setBorder(
+            BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(Color.GRAY),
+                new EmptyBorder(4, 4, 4, 4)
+            )
+        );
+        this.statusReasonMessage.setVisible(false);
+
         final JPanel rootPanel = new JPanel(new GridLayout(0, 1));
 
         rootPanel.add(createConfigPanel());
-        rootPanel.add(createOptionsPanel());
+        rootPanel.add(statusReasonMessage);
         rootPanel.add(createLatestTagsPanel());
 
-        rootPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 260));
+        rootPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 400));
         createLayout(rootPanel, true, null);
     }
 
@@ -82,7 +110,7 @@ public class BuildingsToggleDialog extends ToggleDialog {
         configPanel.add(status);
 
         configPanel.add(new JLabel(tr("Reason:")));
-        configPanel.add(statusReason);
+        configPanel.add(statusReasonButton);
 
         configPanel.add(new JLabel(tr("Import mode:")));
         configPanel.add(importModeComboBox);
@@ -90,25 +118,12 @@ public class BuildingsToggleDialog extends ToggleDialog {
         configPanel.add(new JLabel(tr("Data source:")));
         configPanel.add(dataSourceProfilesComboBox);
 
+        configPanel.add(dontAttachBarriersCheckBox);
+        configPanel.add(new JLabel(""));
+
         configPanel.setBorder(new EmptyBorder(0, 5, 0, 0));
 
         return configPanel;
-    }
-
-    private JPanel createOptionsPanel() {
-        final JPanel optionsPanel = new JPanel(new GridLayout(1, 1));
-
-        dontAttachBarriersCheckBox.setToolTipText(
-            tr("Fences are not snapped onto the building outline, cut or deleted during import")
-        );
-        dontAttachBarriersCheckBox.setSelected(BuildingsSettings.DONT_ATTACH_BARRIER_WAYS.get());
-        dontAttachBarriersCheckBox.addItemListener(event ->
-            BuildingsSettings.DONT_ATTACH_BARRIER_WAYS.put(dontAttachBarriersCheckBox.isSelected()));
-
-        optionsPanel.add(dontAttachBarriersCheckBox);
-        optionsPanel.setBorder(BorderFactory.createTitledBorder(tr("Options")));
-
-        return optionsPanel;
     }
 
     private JPanel createLatestTagsPanel() {
@@ -161,23 +176,14 @@ public class BuildingsToggleDialog extends ToggleDialog {
     }
 
     public void setStatusReasonText(String statusReasonText) {
-        if (statusReasonText == null || statusReasonText.isEmpty()) {
-            statusReason.setText("");
-            statusReason.setToolTipText(null);
-            return;
-        }
-        // Wrap the reason at a fixed width so the side panel is not widened by a long message
-        // (and never needs horizontal scrolling); the full text is available as a tooltip.
-        statusReason.setText(
-            "<html><div width='220px'>" + escapeHtml(statusReasonText) + "</div></html>"
-        );
-        statusReason.setToolTipText(statusReasonText);
+        statusReasonMessage.setText(statusReasonText == null ? "" : statusReasonText);
     }
 
-    private static String escapeHtml(String text) {
-        return text.replace("&", "&amp;")
-            .replace("<", "&lt;")
-            .replace(">", "&gt;");
+    private void toggleStatusReasonMessage() {
+        boolean show = !statusReasonMessage.isVisible();
+        statusReasonMessage.setVisible(show);
+        statusReasonMessage.revalidate();
+        statusReasonMessage.repaint();
     }
 
     public void setBuildingTypeForeground(Color color) {

@@ -158,6 +158,53 @@ public class ProtectedLanduseNodeImportTest {
         Assertions.assertFalse(fenceEast.isDeleted());
     }
 
+    @Test
+    void testEntranceSharedWithFootwayIsInsertedOnlyOnce() {
+        DataSet ds = new DataSet();
+        Way building = new Way(1234, 1);
+        building.put("building", "yes");
+        Node southWest = addNode(ds, building, latLon(0, 0));
+        Node northWest = addNode(ds, building, latLon(0, 0.001));
+        Node northEast = addNode(ds, building, latLon(0.001, 0.001));
+        Node southEast = addNode(ds, building, latLon(0.001, 0));
+        building.addNode(southWest);
+        ds.addPrimitive(building);
+
+        // An entrance shared with a 2-node footway (the footway cannot be detached – it would be
+        // left with a single node). The entrance is both sticky and detachable.
+        Node entrance = new Node(latLon(0.0005, 0));
+        entrance.put("entrance", "staircase");
+        entrance.put("addr:flats", "1-10");
+        ds.addPrimitive(entrance);
+        Way footway = new Way(5678, 1);
+        footway.put("highway", "footway");
+        Node sidewalk = new Node(latLon(0.0005, -0.001));
+        ds.addPrimitive(sidewalk);
+        footway.setNodes(Arrays.asList(sidewalk, entrance));
+        ds.addPrimitive(footway);
+        building.setNodes(Arrays.asList(southWest, entrance, northWest, northEast, southEast, southWest));
+        building.setModified(true);
+        MainApplication.getLayerManager().addLayer(new OsmDataLayer(ds, "test", null));
+
+        Way importedBuilding = createImportedBuilding();
+        AddBuildingGeometryCommand addCommand = new AddBuildingGeometryCommand(ds, importedBuilding);
+        addCommand.executeCommand();
+        ReplaceBuildingGeometryCommand replaceCommand = new ReplaceBuildingGeometryCommand(ds, building, addCommand);
+        Assertions.assertTrue(replaceCommand.executeCommand());
+
+        // The building is valid – the entrance was inserted only once.
+        Assertions.assertTrue(isBuildingWayValid(building));
+        Assertions.assertEquals(
+            1,
+            building.getNodes().stream().filter(node -> node == entrance).count(),
+            "The entrance must appear exactly once in the building outline"
+        );
+        // The footway stays unchanged.
+        Assertions.assertFalse(footway.isDeleted());
+        Assertions.assertEquals(Arrays.asList(sidewalk, entrance), footway.getNodes());
+        Assertions.assertFalse(entrance.isDeleted());
+    }
+
     private static Way createImportedBuilding() {
         DataSet importDs = new DataSet();
         Way importedBuilding = new Way();

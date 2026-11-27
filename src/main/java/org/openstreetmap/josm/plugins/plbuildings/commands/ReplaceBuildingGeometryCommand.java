@@ -183,9 +183,13 @@ public class ReplaceBuildingGeometryCommand extends Command implements CommandRe
                 }
             } else {
                 detachNodesFromOtherWays(detachableNodes);
-                List<Node> nodesToKeepAttached = new ArrayList<>(stickyNodes);
-                nodesToKeepAttached.addAll(detachableNodes);
-                replaceGeometryKeepingStickyNodes(selectedBuilding, newBuilding, nodesToKeepAttached, protectedNodes);
+                // A node can be both sticky and detachable (e.g. an entrance shared with a footway)
+                // – keep each node once, otherwise it would be inserted into the outline twice.
+                LinkedHashSet<Node> nodesToKeep = new LinkedHashSet<>(stickyNodes);
+                nodesToKeep.addAll(detachableNodes);
+                replaceGeometryKeepingStickyNodes(
+                    selectedBuilding, newBuilding, new ArrayList<>(nodesToKeep), protectedNodes
+                );
             }
             if (!BuildingsSettings.DONT_ATTACH_BARRIER_WAYS.get()) {
                 BarrierWaysSnapper.snapBarrierWaysOntoOutline(
@@ -196,6 +200,15 @@ public class ReplaceBuildingGeometryCommand extends Command implements CommandRe
                 );
             }
             if (!isBuildingWayValid(selectedBuilding)) {
+                Set<Node> distinctNodes = new HashSet<>(selectedBuilding.getNodes());
+                List<Node> duplicatedNodes = new ArrayList<>(selectedBuilding.getNodes());
+                distinctNodes.forEach(duplicatedNodes::remove);
+                Logging.error(
+                    "PlBuildings invalid building way {0}: closed={1}, duplicated nodes: {2}",
+                    selectedBuilding.getId(),
+                    selectedBuilding.isClosed(),
+                    duplicatedNodes
+                );
                 throw new DataIntegrityProblemException("Wrongly merged building!");
             }
         } catch (RuntimeException | AssertionError exception) {
@@ -531,7 +544,8 @@ public class ReplaceBuildingGeometryCommand extends Command implements CommandRe
     public static List<Node> insertStickyNodes(Way way, List<Node> stickyNodes) {
         List<Node> wayNodes = new ArrayList<>(way.getNodes());
         Map<Node, Integer> insertionIndices = new HashMap<>();
-        for (Node stickyNode : stickyNodes) {
+        // A sticky node may be passed twice (e.g. it is both sticky and detachable) – insert each once.
+        for (Node stickyNode : new LinkedHashSet<>(stickyNodes)) {
             // The node could already be part of the way (e.g. re-added by the geometry replacement).
             if (wayNodes.contains(stickyNode)) {
                 continue;

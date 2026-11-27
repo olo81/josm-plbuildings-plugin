@@ -193,6 +193,10 @@ msgstr "Usuń stare części"
 msgid "Do not attach fences"
 msgstr "Nie przyklejaj ogrodzeń"
 
+#: src/main/java/org/openstreetmap/josm/plugins/plbuildings/gui/BuildingsToggleDialog.java:67
+msgid "Click to show the reason of the last conflict"
+msgstr "Kliknij, aby zobaczyć powód ostatniego konfliktu"
+
 #: src/main/java/org/openstreetmap/josm/plugins/plbuildings/gui/ImportedBuildingOverlappingOptionDialog.java:50
 #: src/main/java/org/openstreetmap/josm/plugins/plbuildings/gui/TagConflictFrequentDialog.java:51
 msgid "Do not show again (this session)."
