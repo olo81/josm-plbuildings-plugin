@@ -25,6 +25,7 @@ import org.openstreetmap.josm.data.osm.Node;
 import org.openstreetmap.josm.data.osm.OsmPrimitive;
 import org.openstreetmap.josm.data.osm.Relation;
 import org.openstreetmap.josm.data.osm.Way;
+import org.openstreetmap.josm.plugins.plbuildings.BuildingsSettings;
 import org.openstreetmap.josm.plugins.plbuildings.enums.ImportStatus;
 import org.openstreetmap.josm.plugins.plbuildings.utils.BarrierWaysSnapper;
 import org.openstreetmap.josm.plugins.plbuildings.utils.SharedNodesUtils;
@@ -171,7 +172,8 @@ public class ReplaceBuildingGeometryCommand extends Command implements CommandRe
         try {
             List<Node> stickyNodes = getStickyNodes(selectedBuilding, newBuilding);
             List<Node> protectedNodes = getProtectedNodes(selectedBuilding, newBuilding);
-            if (stickyNodes.isEmpty() && protectedNodes.isEmpty()) {
+            List<Node> detachableNodes = getDetachableNodes(selectedBuilding, newBuilding);
+            if (stickyNodes.isEmpty() && protectedNodes.isEmpty() && detachableNodes.isEmpty()) {
                 ReplaceGeometryCommand replaceGeometryCmd = buildReplaceCommandWithAlignedTags(
                     selectedBuilding, newBuilding
                 );
@@ -180,14 +182,19 @@ public class ReplaceBuildingGeometryCommand extends Command implements CommandRe
                     throw new ReplaceGeometryException(tr("Cannot merge buildings!"));
                 }
             } else {
-                replaceGeometryKeepingStickyNodes(selectedBuilding, newBuilding, stickyNodes, protectedNodes);
+                detachNodesFromOtherWays(detachableNodes);
+                List<Node> nodesToKeepAttached = new ArrayList<>(stickyNodes);
+                nodesToKeepAttached.addAll(detachableNodes);
+                replaceGeometryKeepingStickyNodes(selectedBuilding, newBuilding, nodesToKeepAttached, protectedNodes);
             }
-            BarrierWaysSnapper.snapBarrierWaysOntoOutline(
-                getAffectedDataSet(), selectedBuilding, geometryCommands, snapPrimitives
-            );
-            BarrierWaysSnapper.mergeDuplicateOutlineNodes(
-                getAffectedDataSet(), selectedBuilding, geometryCommands, snapPrimitives
-            );
+            if (!BuildingsSettings.DONT_ATTACH_BARRIER_WAYS.get()) {
+                BarrierWaysSnapper.snapBarrierWaysOntoOutline(
+                    getAffectedDataSet(), selectedBuilding, geometryCommands, snapPrimitives
+                );
+                BarrierWaysSnapper.mergeDuplicateOutlineNodes(
+                    getAffectedDataSet(), selectedBuilding, geometryCommands, snapPrimitives
+                );
+            }
             if (!isBuildingWayValid(selectedBuilding)) {
                 throw new DataIntegrityProblemException("Wrongly merged building!");
             }
@@ -287,6 +294,11 @@ public class ReplaceBuildingGeometryCommand extends Command implements CommandRe
             if (SharedNodesUtils.isNodeReferencedByLanduse(node)) {
                 continue;
             }
+            // Nodes shared with an amenity area must not be moved or merged – the amenity area
+            // has to stay untouched.
+            if (SharedNodesUtils.isNodeReferencedByAmenityArea(node)) {
+                continue;
+            }
             boolean hasInterestingKey = node.getKeys().keySet().stream()
                 .anyMatch(key -> !AbstractPrimitive.isUninterestingKey(key));
             boolean isInRelation = node.getReferrers().stream().anyMatch(Relation.class::isInstance);
@@ -299,8 +311,8 @@ public class ReplaceBuildingGeometryCommand extends Command implements CommandRe
     }
 
     /**
-     * Nodes with their own tags or relation memberships which are shared with another building or a
-     * landuse area. Such nodes cannot be moved (that would break the neighbour or the landuse area),
+     * Nodes with their own tags or relation memberships which are shared with another building or an
+     * amenity area. Such nodes cannot be moved (that would break the neighbour or the amenity area),
      * but utilsplugin2 refuses to replace the geometry while they are part of the old way. They are
      * temporarily removed from the old building for the replacement and stay in place in the other ways.
      */
@@ -311,8 +323,8 @@ public class ReplaceBuildingGeometryCommand extends Command implements CommandRe
                 continue;
             }
             boolean isSharedWithOtherBuilding = isNodeSharedWithOtherBuilding(node, selectedBuilding);
-            boolean isSharedWithLanduse = SharedNodesUtils.isNodeReferencedByLanduse(node);
-            if (!isSharedWithOtherBuilding && !isSharedWithLanduse) {
+            boolean isSharedWithAmenityArea = SharedNodesUtils.isNodeReferencedByAmenityArea(node);
+            if (!isSharedWithOtherBuilding && !isSharedWithAmenityArea) {
                 continue;
             }
             boolean hasInterestingKey = node.getKeys().keySet().stream()
@@ -323,6 +335,71 @@ public class ReplaceBuildingGeometryCommand extends Command implements CommandRe
             }
         }
         return new ArrayList<>(protectedNodes);
+    }
+
+    /**
+     * Nodes with their own tags or relation memberships which are shared with a landuse area or a
+     * pedestrian way (e.g. a camera on the wall of a building with a landuse corner, or a door at a
+     * footway). The attached object stays on the building (it is moved onto the new outline), while
+     * the landuse/pedestrian way is detached from that node.
+     */
+    private static List<Node> getDetachableNodes(Way selectedBuilding, Way newBuilding) {
+        Set<Node> detachableNodes = new LinkedHashSet<>();
+        for (Node node : selectedBuilding.getNodes()) {
+            if (newBuilding.containsNode(node)) {
+                continue;
+            }
+            if (!SharedNodesUtils.isNodeReferencedByDetachableWay(node)) {
+                continue;
+            }
+            boolean hasInterestingKey = node.getKeys().keySet().stream()
+                .anyMatch(key -> !AbstractPrimitive.isUninterestingKey(key));
+            boolean isInRelation = node.getReferrers().stream().anyMatch(Relation.class::isInstance);
+            if (hasInterestingKey || isInRelation) {
+                detachableNodes.add(node);
+            }
+        }
+        return new ArrayList<>(detachableNodes);
+    }
+
+    /**
+     * Detaches the given nodes from the landuse/pedestrian ways which share them. The nodes stay on
+     * the building. Ways which would become invalid (fewer than 2 nodes) are left untouched.
+     */
+    private void detachNodesFromOtherWays(List<Node> detachableNodes) {
+        for (Node node : detachableNodes) {
+            for (Way way : new ArrayList<>(node.referrers(Way.class).toList())) {
+                if (way.equals(selectedBuilding) || !SharedNodesUtils.isDetachableWay(way)) {
+                    continue;
+                }
+                List<Node> newNodes = detachNodeFromWay(way, node);
+                if (newNodes == null) {
+                    continue; // the way would become invalid – leave it untouched
+                }
+                ChangeNodesCommand detachCommand = new ChangeNodesCommand(way, newNodes);
+                geometryCommands.add(detachCommand);
+                detachCommand.executeCommand();
+                snapPrimitives.add(way);
+                snapPrimitives.addAll(way.getNodes());
+            }
+        }
+    }
+
+    /**
+     * @return the way node list with the given node removed, keeping the way closed and valid, or
+     *     null when the way would become invalid (fewer than 2 nodes)
+     */
+    private static List<Node> detachNodeFromWay(Way way, Node node) {
+        List<Node> nodes = new ArrayList<>(way.getNodes());
+        boolean wasClosed = way.isClosed();
+        nodes.removeIf(candidate -> candidate == node);
+        if (nodes.isEmpty()) {
+            return null;
+        }
+        if (wasClosed && nodes.get(0) != nodes.get(nodes.size() - 1)) {
+            nodes.add(nodes.get(0)); // keep the area closed
+        }
+        return nodes.size() >= 2 ? nodes : null;
     }
 
     private static Stream<Way> getOtherReferrerWays(Node node, Way selectedBuilding) {

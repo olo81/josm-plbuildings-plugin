@@ -46,6 +46,7 @@ public class BuildingsImportManager {
     private DataSourceProfile currentProfile;
     private BuildingsImportData importedData;
     private ImportStatus status;
+    private String statusReason;
     private Way resultBuilding;
 
     private final NotificationConfig notificationConfig;
@@ -127,11 +128,16 @@ public class BuildingsImportManager {
 
     public void setStatus(ImportStatus status, String reason) {
         this.status = status;
+        this.statusReason = reason;
         updateGuiStatus();
         Notification notification = Notification.fromImportStatus(status);
         if (notification != null && notificationConfig.isNotificationEnabled(notification)) {
             showNotification(status + ": " + reason);
         }
+    }
+
+    public String getStatusReason() {
+        return statusReason;
     }
 
     public void validate() throws ImportActionCanceledException {
@@ -182,7 +188,7 @@ public class BuildingsImportManager {
             default: // DONE, NO_DATA, NO_UPDATE
                 autoChangeToDefault = true;
         }
-        BuildingsPlugin.toggleDialogController.setStatus(status, autoChangeToDefault);
+        BuildingsPlugin.toggleDialogController.setStatus(status, autoChangeToDefault, statusReason);
     }
 
     /**

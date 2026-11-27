@@ -12,6 +12,7 @@ import java.util.function.Function;
 import javax.swing.BorderFactory;
 import javax.swing.ComboBoxModel;
 import javax.swing.DefaultListCellRenderer;
+import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JList;
@@ -19,6 +20,7 @@ import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
 import org.openstreetmap.josm.gui.dialogs.ToggleDialog;
 import org.openstreetmap.josm.plugins.plbuildings.BuildingsPlugin;
+import org.openstreetmap.josm.plugins.plbuildings.BuildingsSettings;
 import org.openstreetmap.josm.tools.Shortcut;
 
 /**
@@ -28,6 +30,7 @@ public class BuildingsToggleDialog extends ToggleDialog {
     private static final int DATA_SOURCE_PROFILE_MAX_CHARS = 20;
 
     private final JLabel status;
+    private final JLabel statusReason;
 
     private final JComboBox<Object> importModeComboBox;
     private final JComboBox<Object> dataSourceProfilesComboBox;
@@ -36,6 +39,8 @@ public class BuildingsToggleDialog extends ToggleDialog {
 
     private final JLabel buildingLevels;
     private final JLabel hasUncommonTag;
+
+    private final JCheckBox dontAttachBarriersCheckBox;
 
     public BuildingsToggleDialog() {
         super(
@@ -51,16 +56,19 @@ public class BuildingsToggleDialog extends ToggleDialog {
         );
 
         this.status = new JLabel("");
+        this.statusReason = new JLabel("");
         this.importModeComboBox = new JComboBox<>();
         this.dataSourceProfilesComboBox = new JComboBox<>();
 
         this.buildingType = new JLabel("");
         this.buildingLevels = new JLabel("");
         this.hasUncommonTag = new JLabel("");
+        this.dontAttachBarriersCheckBox = new JCheckBox(tr("Do not attach fences"));
 
         final JPanel rootPanel = new JPanel(new GridLayout(0, 1));
 
         rootPanel.add(createConfigPanel());
+        rootPanel.add(createOptionsPanel());
         rootPanel.add(createLatestTagsPanel());
 
         rootPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 150));
@@ -68,10 +76,13 @@ public class BuildingsToggleDialog extends ToggleDialog {
     }
 
     private JPanel createConfigPanel() {
-        final JPanel configPanel = new JPanel(new GridLayout(3, 2));
+        final JPanel configPanel = new JPanel(new GridLayout(4, 2));
 
         configPanel.add(new JLabel(tr("Status:")));
         configPanel.add(status);
+
+        configPanel.add(new JLabel(tr("Reason:")));
+        configPanel.add(statusReason);
 
         configPanel.add(new JLabel(tr("Import mode:")));
         configPanel.add(importModeComboBox);
@@ -82,6 +93,22 @@ public class BuildingsToggleDialog extends ToggleDialog {
         configPanel.setBorder(new EmptyBorder(0, 5, 0, 0));
 
         return configPanel;
+    }
+
+    private JPanel createOptionsPanel() {
+        final JPanel optionsPanel = new JPanel(new GridLayout(1, 1));
+
+        dontAttachBarriersCheckBox.setToolTipText(
+            tr("Fences are not snapped onto the building outline, cut or deleted during import")
+        );
+        dontAttachBarriersCheckBox.setSelected(BuildingsSettings.DONT_ATTACH_BARRIER_WAYS.get());
+        dontAttachBarriersCheckBox.addItemListener(event ->
+            BuildingsSettings.DONT_ATTACH_BARRIER_WAYS.put(dontAttachBarriersCheckBox.isSelected()));
+
+        optionsPanel.add(dontAttachBarriersCheckBox);
+        optionsPanel.setBorder(BorderFactory.createTitledBorder(tr("Options")));
+
+        return optionsPanel;
     }
 
     private JPanel createLatestTagsPanel() {
@@ -131,6 +158,10 @@ public class BuildingsToggleDialog extends ToggleDialog {
 
     public void setStatusText(String statusText) {
         status.setText(statusText);
+    }
+
+    public void setStatusReasonText(String statusReasonText) {
+        statusReason.setText(statusReasonText);
     }
 
     public void setBuildingTypeForeground(Color color) {

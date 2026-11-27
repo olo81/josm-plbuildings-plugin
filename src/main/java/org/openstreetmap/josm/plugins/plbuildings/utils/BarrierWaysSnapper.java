@@ -150,8 +150,9 @@ public final class BarrierWaysSnapper {
         // kept (e.g. an entrance node stays and the untagged duplicate is removed).
         for (int i = 0; i < barrier.getNodesCount(); i++) {
             Node node = barrier.getNode(i);
-            // A node shared with a landuse area must not be merged (it would rewire the landuse way).
-            if (SharedNodesUtils.isNodeReferencedByLanduse(node)) {
+            // A node shared with a landuse or amenity area must not be merged (it would rewire the area way).
+            if (SharedNodesUtils.isNodeReferencedByLanduse(node)
+                || SharedNodesUtils.isNodeReferencedByAmenityArea(node)) {
                 continue;
             }
             for (Node outlineNode : outline.getNodes()) {
@@ -532,13 +533,14 @@ public final class BarrierWaysSnapper {
         Collection<OsmPrimitive> touchedPrimitives
     ) {
         // Prefer the node which carries tags (e.g. a door) as the survivor. Nodes shared with a
-        // landuse area are left alone (the landuse area must stay untouched).
+        // landuse or amenity area are left alone (the area must stay untouched).
         Node survivor = null;
         for (Node candidate : group) {
             if (candidate.getReferrers().stream().anyMatch(Relation.class::isInstance)) {
                 continue;
             }
-            if (SharedNodesUtils.isNodeReferencedByLanduse(candidate)) {
+            if (SharedNodesUtils.isNodeReferencedByLanduse(candidate)
+                || SharedNodesUtils.isNodeReferencedByAmenityArea(candidate)) {
                 continue;
             }
             if (survivor == null || candidate.getKeys().size() > survivor.getKeys().size()) {
@@ -551,7 +553,8 @@ public final class BarrierWaysSnapper {
         for (Node node : group) {
             if (node != survivor
                 && node.getReferrers().stream().noneMatch(Relation.class::isInstance)
-                && !SharedNodesUtils.isNodeReferencedByLanduse(node)) {
+                && !SharedNodesUtils.isNodeReferencedByLanduse(node)
+                && !SharedNodesUtils.isNodeReferencedByAmenityArea(node)) {
                 mergeNodeInto(dataSet, node, survivor, commands, touchedPrimitives);
             }
         }

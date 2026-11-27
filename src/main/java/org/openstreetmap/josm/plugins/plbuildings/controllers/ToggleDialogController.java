@@ -26,6 +26,8 @@ public class ToggleDialogController {
     private final ToggleDialogProfilesComboBoxModel dataSourceProfilesComboBoxModel;
     private final TogleDialogImportModeComboBoxModel importModeComboBoxModel;
 
+    private String lastStatusReason;
+
     static final Color COLOR_DEFAULT = Color.BLACK;
     /** Hex orange better than Color.ORANGE */
     static final Color COLOR_ORANGE = Color.decode("#ff781f");
@@ -62,9 +64,21 @@ public class ToggleDialogController {
     }
 
     public void setStatus(ImportStatus status, boolean autoChangeToDefault) {
+        setStatus(status, autoChangeToDefault, null);
+    }
+
+    /**
+     * @param reason the reason of the current status (e.g. the last conflict/error message) – it stays
+     *     visible in the panel until the next status change with a reason
+     */
+    public void setStatus(ImportStatus status, boolean autoChangeToDefault, String reason) {
         Logging.info("Changing status to: {0}", status);
+        if (reason != null) {
+            this.lastStatusReason = reason;
+        }
         toggleDialogView.setStatusText(status.toString());
         toggleDialogView.setStatusForeground(getStatusTextColor(status));
+        toggleDialogView.setStatusReasonText(lastStatusReason == null ? "" : lastStatusReason);
 
         if (autoChangeToDefault) {
             setDefaultStatus();

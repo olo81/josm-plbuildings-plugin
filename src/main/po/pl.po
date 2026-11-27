@@ -189,6 +189,10 @@ msgstr "Źródła danych"
 msgid "Delete old parts"
 msgstr "Usuń stare części"
 
+#: src/main/java/org/openstreetmap/josm/plugins/plbuildings/gui/BuildingsToggleDialog.java:74
+msgid "Do not attach fences"
+msgstr "Nie przyklejaj ogrodzeń"
+
 #: src/main/java/org/openstreetmap/josm/plugins/plbuildings/gui/ImportedBuildingOverlappingOptionDialog.java:50
 #: src/main/java/org/openstreetmap/josm/plugins/plbuildings/gui/TagConflictFrequentDialog.java:51
 msgid "Do not show again (this session)."
@@ -233,6 +237,10 @@ msgstr ""
 #: src/main/java/org/openstreetmap/josm/plugins/plbuildings/enums/ImportMode.java:6
 msgid "Full"
 msgstr "Pełny"
+
+#: src/main/java/org/openstreetmap/josm/plugins/plbuildings/gui/BuildingsToggleDialog.java:100
+msgid "Fences are not snapped onto the building outline, cut or deleted during import"
+msgstr "Ogrodzenia nie są przyciągane do obrysu budynku, przycinane ani usuwane podczas importu"
 
 #: src/main/java/org/openstreetmap/josm/plugins/plbuildings/enums/ImportMode.java:7
 #: src/main/java/org/openstreetmap/josm/plugins/plbuildings/models/ui/SettingsDataSourcesProfilesTableModel.java:13
@@ -394,6 +402,14 @@ msgstr "Jednego źródła danych brakuje. Użyto"
 #, java-format
 msgid "Open the {0} window"
 msgstr "Otwiera okno {0}"
+
+#: src/main/java/org/openstreetmap/josm/plugins/plbuildings/gui/BuildingsToggleDialog.java:101
+msgid "Options"
+msgstr "Opcje"
+
+#: src/main/java/org/openstreetmap/josm/plugins/plbuildings/gui/BuildingsToggleDialog.java:87
+msgid "Reason:"
+msgstr "Powód:"
 
 #: src/main/java/org/openstreetmap/josm/plugins/plbuildings/gui/SettingsDialog.java:13
 msgid "PlBuildings settings"

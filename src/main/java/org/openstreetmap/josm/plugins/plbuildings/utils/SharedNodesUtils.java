@@ -3,12 +3,27 @@ package org.openstreetmap.josm.plugins.plbuildings.utils;
 import java.util.AbstractMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import org.openstreetmap.josm.data.coor.LatLon;
 import org.openstreetmap.josm.data.osm.BBox;
 import org.openstreetmap.josm.data.osm.Node;
 import org.openstreetmap.josm.data.osm.TagMap;
+import org.openstreetmap.josm.data.osm.Way;
 
 public class SharedNodesUtils {
+
+    /**
+     * Highway values of pedestrian ways which can be detached from a building node (the attached
+     * object like a door or a camera stays on the building).
+     */
+    private static final Set<String> DETACHABLE_HIGHWAY_VALUES = Set.of(
+        "footway",
+        "path",
+        "pedestrian",
+        "steps",
+        "corridor",
+        "cycleway"
+    );
 
     /**
      * Create bbox based on list of nodes and their positions.
@@ -58,6 +73,42 @@ public class SharedNodesUtils {
      */
     public static boolean isNodeReferencedByLanduse(Node node) {
         return isNodeStickToWayWithTag(node, new AbstractMap.SimpleEntry<>("landuse", "*"));
+    }
+
+    /**
+     * Checks if the node is part of an amenity area (a closed way with the amenity key which is not
+     * a building itself). Such nodes must not be moved or merged during import – the amenity area has
+     * to stay untouched.
+     *
+     * @return true if at least one of the node's parent ways is a closed way with the amenity key
+     */
+    public static boolean isNodeReferencedByAmenityArea(Node node) {
+        return node.isReferredByWays(1) && node.getParentWays().stream()
+            .anyMatch(way -> way.hasKey("amenity")
+                && way.isClosed()
+                && !way.hasKey("building")
+                && !way.hasKey("building:part"));
+    }
+
+    /**
+     * Checks if the node is part of a way which can be detached from the building (a landuse area
+     * or a pedestrian way).
+     *
+     * @return true if at least one of the node's parent ways is detachable
+     */
+    public static boolean isNodeReferencedByDetachableWay(Node node) {
+        return node.isReferredByWays(1) && node.getParentWays().stream()
+            .anyMatch(SharedNodesUtils::isDetachableWay);
+    }
+
+    /**
+     * @return true if the way can be detached from a building node (a landuse area or a pedestrian way)
+     */
+    public static boolean isDetachableWay(Way way) {
+        if (way.hasKey("landuse")) {
+            return true;
+        }
+        return way.hasKey("highway") && DETACHABLE_HIGHWAY_VALUES.contains(way.get("highway"));
     }
 
 

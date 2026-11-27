@@ -115,4 +115,12 @@ public class BuildingsSettings {
     public static final BooleanProperty AUTOREMOVE_UNWANTED_SOURCE = new BooleanProperty(
         SETTING_PREFIX + "autoremove_unwanted_source", true
     );
+
+    /**
+     * When enabled, fences (barrier ways) are not snapped onto the new building outline, cut or
+     * deleted during import – they stay completely untouched.
+     */
+    public static final BooleanProperty DONT_ATTACH_BARRIER_WAYS = new BooleanProperty(
+        SETTING_PREFIX + "dont_attach_barrier_ways", false
+    );
 }

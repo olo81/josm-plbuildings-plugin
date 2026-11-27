@@ -152,8 +152,8 @@ public class AddBuildingGeometryCommand extends Command implements CommandResult
         addBuilding();
 
         // Cut fences which cross the new building outline (even without shared nodes) and merge nodes
-        // which ended up at the same position.
-        if (snapBarrierWays) {
+        // which ended up at the same position. Skipped when the user disabled fence attaching.
+        if (snapBarrierWays && !BuildingsSettings.DONT_ATTACH_BARRIER_WAYS.get()) {
             fenceCommands.clear();
             fencePrimitives.clear();
             try {

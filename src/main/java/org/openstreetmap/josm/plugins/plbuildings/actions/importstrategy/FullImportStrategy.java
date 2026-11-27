@@ -302,8 +302,9 @@ public class FullImportStrategy extends ImportStrategy {
         Set<Node> nodesToKeep = new LinkedHashSet<>();
         for (Way oldBuilding : oldBuildings) {
             for (Node node : oldBuilding.getNodes()) {
-                if (SharedNodesUtils.isNodeReferencedByLanduse(node)) {
-                    continue; // landuse areas stay untouched
+                if (SharedNodesUtils.isNodeReferencedByLanduse(node)
+                    || SharedNodesUtils.isNodeReferencedByAmenityArea(node)) {
+                    continue; // landuse and amenity areas stay untouched
                 }
                 boolean hasInterestingKey = node.getKeys().keySet().stream()
                     .anyMatch(key -> !AbstractPrimitive.isUninterestingKey(key));
