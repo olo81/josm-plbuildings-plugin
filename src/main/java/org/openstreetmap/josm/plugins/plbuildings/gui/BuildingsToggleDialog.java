@@ -47,7 +47,6 @@ public class BuildingsToggleDialog extends ToggleDialog {
     private final JLabel hasUncommonTag;
 
     private final JButton statusReasonButton;
-    private final JPopupMenu statusReasonPopup;
     private String fullStatusReason;
 
     private final JCheckBox dontAttachBarriersCheckBox;
@@ -75,7 +74,6 @@ public class BuildingsToggleDialog extends ToggleDialog {
         this.dontAttachBarriersCheckBox = new JCheckBox(tr("Do not attach fences"));
 
         this.statusReasonButton = new JButton("ℹ");
-        this.statusReasonPopup = new JPopupMenu();
         this.statusReasonButton.setMargin(new Insets(0, 4, 0, 4));
         this.statusReasonButton.setToolTipText(tr("Click to show the reason of the last conflict"));
         this.statusReasonButton.addActionListener(event -> showStatusReasonPopup());
@@ -178,15 +176,17 @@ public class BuildingsToggleDialog extends ToggleDialog {
         if (fullStatusReason == null || fullStatusReason.isEmpty()) {
             return;
         }
-        statusReasonPopup.removeAll();
         JTextArea messageArea = new JTextArea(fullStatusReason);
         messageArea.setEditable(false);
         messageArea.setLineWrap(true);
         messageArea.setWrapStyleWord(true);
         messageArea.setColumns(40);
         messageArea.setBorder(new EmptyBorder(8, 8, 8, 8));
-        statusReasonPopup.add(messageArea);
-        statusReasonPopup.show(statusReasonButton, 0, statusReasonButton.getHeight());
+        // A fresh popup is created every time: reusing one JPopupMenu with removeAll()/add()
+        // corrupts its internal BoxLayout cache and crashes with a NullPointerException.
+        JPopupMenu popup = new JPopupMenu();
+        popup.add(messageArea);
+        popup.show(statusReasonButton, 0, statusReasonButton.getHeight());
     }
 
     public void setBuildingTypeForeground(Color color) {
