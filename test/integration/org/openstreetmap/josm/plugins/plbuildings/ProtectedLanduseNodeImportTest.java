@@ -205,6 +205,46 @@ public class ProtectedLanduseNodeImportTest {
         Assertions.assertFalse(entrance.isDeleted());
     }
 
+    @Test
+    void testAttachedFenceUntouchedWhenOptionEnabled() {
+        DataSet ds = new DataSet();
+        Way building = new Way(1234, 1);
+        building.put("building", "yes");
+        Node southWest = addNode(ds, building, latLon(0, 0));
+        Node northWest = addNode(ds, building, latLon(0, 0.001));
+        Node northEast = addNode(ds, building, latLon(0.001, 0.001));
+        Node southEast = addNode(ds, building, latLon(0.001, 0));
+        building.addNode(southWest);
+        ds.addPrimitive(building);
+
+        // A fence attached to the south-west corner of the building.
+        Way fence = new Way(5678, 1);
+        fence.put("barrier", "fence");
+        Node fenceEnd = new Node(latLon(-0.001, 0));
+        ds.addPrimitive(fenceEnd);
+        fence.setNodes(Arrays.asList(fenceEnd, southWest));
+        ds.addPrimitive(fence);
+        MainApplication.getLayerManager().addLayer(new OsmDataLayer(ds, "test", null));
+
+        Way importedBuilding = createImportedBuilding();
+        AddBuildingGeometryCommand addCommand = new AddBuildingGeometryCommand(ds, importedBuilding);
+        addCommand.executeCommand();
+        ReplaceBuildingGeometryCommand replaceCommand = new ReplaceBuildingGeometryCommand(ds, building, addCommand);
+        try {
+            BuildingsSettings.DONT_ATTACH_BARRIER_WAYS.put(true);
+            Assertions.assertTrue(replaceCommand.executeCommand());
+        } finally {
+            BuildingsSettings.DONT_ATTACH_BARRIER_WAYS.put(false);
+        }
+
+        // The fence and its shared node are untouched.
+        Assertions.assertFalse(fence.isDeleted());
+        Assertions.assertEquals(Arrays.asList(fenceEnd, southWest), fence.getNodes());
+        Assertions.assertEquals(latLon(0, 0), southWest.getCoor());
+        Assertions.assertFalse(southWest.isDeleted());
+        Assertions.assertTrue(isBuildingWayValid(building));
+    }
+
     private static Way createImportedBuilding() {
         DataSet importDs = new DataSet();
         Way importedBuilding = new Way();

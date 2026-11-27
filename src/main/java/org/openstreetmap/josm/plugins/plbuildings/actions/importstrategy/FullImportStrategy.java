@@ -27,6 +27,7 @@ import org.openstreetmap.josm.data.osm.OsmPrimitive;
 import org.openstreetmap.josm.data.osm.Relation;
 import org.openstreetmap.josm.data.osm.Way;
 import org.openstreetmap.josm.plugins.plbuildings.BuildingsImportManager;
+import org.openstreetmap.josm.plugins.plbuildings.BuildingsSettings;
 import org.openstreetmap.josm.plugins.plbuildings.commands.AddBuildingGeometryCommand;
 import org.openstreetmap.josm.plugins.plbuildings.commands.CommandResultBuilding;
 import org.openstreetmap.josm.plugins.plbuildings.commands.ReplaceBuildingGeometryCommand;
@@ -312,7 +313,8 @@ public class FullImportStrategy extends ImportStrategy {
                 boolean isAttachedToOtherWay = node.getReferrers().stream()
                     .anyMatch(referrer -> referrer instanceof Way
                         && !oldBuildings.contains(referrer)
-                        && !referrer.hasKey("building"));
+                        && !referrer.hasKey("building")
+                        && !(referrer.hasKey("barrier") && BuildingsSettings.DONT_ATTACH_BARRIER_WAYS.get()));
                 if (hasInterestingKey || isInRelation || isAttachedToOtherWay) {
                     nodesToKeep.add(node);
                 }

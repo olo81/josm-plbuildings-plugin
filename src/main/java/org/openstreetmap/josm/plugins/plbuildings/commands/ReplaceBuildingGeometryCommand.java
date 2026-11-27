@@ -316,7 +316,10 @@ public class ReplaceBuildingGeometryCommand extends Command implements CommandRe
                 .anyMatch(key -> !AbstractPrimitive.isUninterestingKey(key));
             boolean isInRelation = node.getReferrers().stream().anyMatch(Relation.class::isInstance);
             boolean isAttachedToOtherWay = getOtherReferrerWays(node, selectedBuilding).findAny().isPresent();
-            if (hasInterestingKey || isInRelation || isAttachedToOtherWay) {
+            // With the "do not attach fences" option the fence attachments must not be moved onto the
+            // new outline – the fence has to stay untouched (handled as protected nodes instead).
+            boolean canMoveAttached = !BuildingsSettings.DONT_ATTACH_BARRIER_WAYS.get();
+            if (hasInterestingKey || isInRelation || (isAttachedToOtherWay && canMoveAttached)) {
                 stickyNodes.add(node);
             }
         }
@@ -337,7 +340,10 @@ public class ReplaceBuildingGeometryCommand extends Command implements CommandRe
             }
             boolean isSharedWithOtherBuilding = isNodeSharedWithOtherBuilding(node, selectedBuilding);
             boolean isSharedWithAmenityArea = SharedNodesUtils.isNodeReferencedByAmenityArea(node);
-            if (!isSharedWithOtherBuilding && !isSharedWithAmenityArea) {
+            // With the "do not attach fences" option the fence attachments stay in place as well.
+            boolean isAttachedToFence = BuildingsSettings.DONT_ATTACH_BARRIER_WAYS.get()
+                && getOtherReferrerWays(node, selectedBuilding).anyMatch(way -> way.hasKey("barrier"));
+            if (!isSharedWithOtherBuilding && !isSharedWithAmenityArea && !isAttachedToFence) {
                 continue;
             }
             boolean hasInterestingKey = node.getKeys().keySet().stream()
