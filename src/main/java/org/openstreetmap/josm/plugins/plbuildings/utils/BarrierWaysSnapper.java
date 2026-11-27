@@ -550,8 +550,10 @@ public final class BarrierWaysSnapper {
         if (survivor == null) {
             return; // no mergeable nodes in the group
         }
-        for (Node node : group) {
+        // The closing node appears twice in the outline – merge each distinct node only once.
+        for (Node node : new LinkedHashSet<>(group)) {
             if (node != survivor
+                && !node.isDeleted()
                 && node.getReferrers().stream().noneMatch(Relation.class::isInstance)
                 && !SharedNodesUtils.isNodeReferencedByLanduse(node)
                 && !SharedNodesUtils.isNodeReferencedByAmenityArea(node)) {
@@ -589,7 +591,7 @@ public final class BarrierWaysSnapper {
             touchedPrimitives.addAll(way.getNodes());
         }
         // The node should be unreferenced now – delete it.
-        if (node.getReferrers().isEmpty()) {
+        if (!node.isDeleted() && node.getReferrers().isEmpty()) {
             touchedPrimitives.add(node);
             DeleteCommand deleteCommand = new DeleteCommand(dataSet, Collections.singleton(node));
             commands.add(deleteCommand);
@@ -599,6 +601,7 @@ public final class BarrierWaysSnapper {
 
     private static List<Node> replaceNodeInWay(Way way, Node oldNode, Node newNode) {
         boolean newNodePresent = way.getNodes().stream().anyMatch(node -> node == newNode);
+        boolean wasClosed = way.isClosed();
         List<Node> result = new ArrayList<>();
         Node previous = null;
         for (Node node : way.getNodes()) {
@@ -613,6 +616,11 @@ public final class BarrierWaysSnapper {
                 result.add(current);
                 previous = current;
             }
+        }
+        // When the merged node was the closing node of a closed way, dropping it would leave the
+        // way open – restore the closure so the area stays valid.
+        if (wasClosed && !result.isEmpty() && result.get(0) != result.get(result.size() - 1)) {
+            result.add(result.get(0));
         }
         return result;
     }

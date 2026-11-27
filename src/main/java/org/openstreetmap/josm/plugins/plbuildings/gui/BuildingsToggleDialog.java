@@ -71,7 +71,7 @@ public class BuildingsToggleDialog extends ToggleDialog {
         rootPanel.add(createOptionsPanel());
         rootPanel.add(createLatestTagsPanel());
 
-        rootPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 150));
+        rootPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 260));
         createLayout(rootPanel, true, null);
     }
 
@@ -161,7 +161,23 @@ public class BuildingsToggleDialog extends ToggleDialog {
     }
 
     public void setStatusReasonText(String statusReasonText) {
-        statusReason.setText(statusReasonText);
+        if (statusReasonText == null || statusReasonText.isEmpty()) {
+            statusReason.setText("");
+            statusReason.setToolTipText(null);
+            return;
+        }
+        // Wrap the reason at a fixed width so the side panel is not widened by a long message
+        // (and never needs horizontal scrolling); the full text is available as a tooltip.
+        statusReason.setText(
+            "<html><div width='220px'>" + escapeHtml(statusReasonText) + "</div></html>"
+        );
+        statusReason.setToolTipText(statusReasonText);
+    }
+
+    private static String escapeHtml(String text) {
+        return text.replace("&", "&amp;")
+            .replace("<", "&lt;")
+            .replace(">", "&gt;");
     }
 
     public void setBuildingTypeForeground(Color color) {
